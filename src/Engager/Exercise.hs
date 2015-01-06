@@ -1,8 +1,8 @@
 module Engager.Exercise (Exercise(..)) where
 
 import Data.Text (Text)
-import Prelude   (Either)
+import Prelude   (Either, IO)
 
 data Exercise = Exercise { exerciseTitle     :: Text
                          , exerciseStatement :: Text
-                         , exerciseVerifier  :: Text -> Either [Text] Text }
+                         , exerciseVerifier  :: IO (Either [Text] Text) }
