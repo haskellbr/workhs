@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, LambdaCase #-}
 
 module Engager.Core (run) where
 
@@ -24,9 +24,9 @@ start exercises (Options Nothing)  = do screen <- mainScreen $ map snd $ M.toLis
                                         runUi screen defaultContext
 start exercises (Options (Just e)) = putStrLn =<< case M.lookup (T.pack e) exercises of
                                                     Nothing         -> return $ "Exercise " ++ e ++ " does not exist in this tutorial."
-                                                    Just (exercise) -> exerciseVerifier exercise >>= \result -> case result of
-                                                                                                                  Right message -> return $ T.unpack message
-                                                                                                                  Left  reasons -> return $ (T.unpack $ T.intercalate "\n" reasons)
+                                                    Just (exercise) -> exerciseVerifier exercise >>= \case
+                                                                                                       Right message -> return $ T.unpack message
+                                                                                                       Left  reasons -> return $ (T.unpack $ T.intercalate "\n" reasons)
 
 run :: Map Text Exercise -> IO ()
 run exercises = do args <- execParser opts
