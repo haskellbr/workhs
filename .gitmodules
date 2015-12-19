@@ -1,0 +1,6 @@
+[submodule "cheapskate-terminal"]
+	path = cheapskate-terminal
+	url = git://github.com/yamadapc/cheapskate-terminal.git
+[submodule "hpygments"]
+	path = hpygments
+	url = git://github.com/yamadapc/hpygments.git
