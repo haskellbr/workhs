@@ -1,0 +1,3 @@
+[submodule "list-prompt"]
+	path = list-prompt
+	url = git@github.com:yamadapc/list-prompt
