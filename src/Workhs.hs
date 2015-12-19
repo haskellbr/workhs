@@ -2,7 +2,6 @@
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
 module Workhs
     (
       defaultMain
@@ -11,28 +10,25 @@ module Workhs
     )
   where
 
-import           Cheapskate                    (markdown)
+import           Cheapskate                   (markdown)
 import           Cheapskate.Terminal
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
-import qualified Data.ByteString.Char8         as ByteString
+import qualified Data.ByteString.Char8        as ByteString
 import           Data.Conduit
-import qualified Data.Conduit.Binary           as Conduit.Binary
-import qualified Data.Conduit.List             as Conduit.List
+import qualified Data.Conduit.Binary          as Conduit.Binary
+import qualified Data.Conduit.List            as Conduit.List
 import           Data.Conduit.Process
-import qualified Data.Conduit.Text             as Conduit.Text
+import qualified Data.Conduit.Text            as Conduit.Text
 import           Data.Default
 import           Data.List
 import           Data.Monoid
 import           Data.String.Here
-import           Data.String.Here.Interpolated
-import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
-import qualified Data.Text.IO                  as Text
+import           Data.Text                    (Text)
+import qualified Data.Text                    as Text
 import           System.Console.ANSI
 import           System.Console.ListPrompt
-import           System.Directory
-import           System.Environment            (getArgs, getProgName)
+import           System.Environment           (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
 import           System.IO.Temp
@@ -49,8 +45,10 @@ instance Show TaskVerifier where
   show (TaskVerifierIO _) = "TaskVerifierIO"
 
 
+runVerifier :: TaskVerifier -> FilePath -> IO Bool
 runVerifier (TaskVerifierIO test) = test
 
+taskHelloWorldDescription :: Text
 taskHelloWorldDescription = [here|
 Write a Haskell program that prints "Hello World" to the console (stdout).
 

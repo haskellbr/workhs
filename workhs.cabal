@@ -15,7 +15,6 @@ library
                      , conduit
                      , conduit-extra
                      , data-default
-                     , directory
                      , filepath >= 1.4.0.0
                      , here
                      , list-prompt
@@ -37,7 +36,6 @@ executable learnyouhaskell
                      , cheapskate-terminal
                      , conduit
                      , conduit-extra
-                     , directory
                      , filepath >= 1.4.0.0
                      , here
                      , process
