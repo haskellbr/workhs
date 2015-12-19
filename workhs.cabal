@@ -11,8 +11,11 @@ library
                      , cheapskate
                      , cheapskate-terminal
                      , data-default
+                     , directory
+                     , filepath >= 1.4.0.0
                      , here
                      , list-prompt
+                     , process
                      , text
   hs-source-dirs:      src
   ghc-options:         -O2 -threaded
@@ -23,7 +26,10 @@ executable learnyouhaskell
   build-depends:       base >=4 && <5
                      , cheapskate
                      , cheapskate-terminal
+                     , directory
+                     , filepath >= 1.4.0.0
                      , here
+                     , process
                      , workhs
   hs-source-dirs:      bin
   ghc-options:         -O2 -threaded
