@@ -1,19 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Engager.Interface (mainScreen) where
+module Workhs.Interface (mainScreen) where
 
-import Engager.Exercise               
-import Control.Monad                  (forM_)
-import Graphics.Vty.Input             (Key(..), Modifier(..))
-import Graphics.Vty.Widgets.Box       (vBox, setBoxChildSizePolicy, ChildSizePolicy(..))
-import Graphics.Vty.Widgets.Core      (newFocusGroup, addToFocusGroup, onKeyPressed)
-import Graphics.Vty.Widgets.EventLoop (Collection, newCollection, addToCollection)
-import Graphics.Vty.Widgets.Text      (plainText)
-import Graphics.Vty.Widgets.List      (ActivateItemEvent(..), newList, addToList, onItemActivated)
-import System.Exit                    (exitSuccess)
+import           Engager.Exercise
+import           Graphics.Vty.Input             (Key (..), Modifier (..))
+import           Graphics.Vty.Widgets.Box       (ChildSizePolicy (..),
+                                                 setBoxChildSizePolicy, vBox)
+import           Graphics.Vty.Widgets.Core      (addToFocusGroup, newFocusGroup,
+                                                 onKeyPressed)
+import           Graphics.Vty.Widgets.EventLoop (Collection, addToCollection,
+                                                 newCollection)
+import           Graphics.Vty.Widgets.List      (ActivateItemEvent (..),
+                                                 addToList, newList,
+                                                 onItemActivated)
+import           Graphics.Vty.Widgets.Text      (plainText)
+import           System.Exit                    (exitSuccess)
+import           Workhs.Exercise
 
 mainScreen :: [Exercise] -> IO Collection
-mainScreen exercises = do 
+mainScreen exercises = do
                     title <- plainText "tutorial title"
                     list  <- newList 1
                     ui    <- vBox title list

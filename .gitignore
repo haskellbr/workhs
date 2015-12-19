@@ -1,4 +1,21 @@
-cabal.sandbox.config
+
+# Created by https://www.gitignore.io/api/haskell
+
+### Haskell ###
+dist
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
 .cabal-sandbox/
-dist/
-TAGS
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+.stack-work/
+

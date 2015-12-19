@@ -1,16 +1,17 @@
-{-# LANGUAGE OverloadedStrings, LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module Engager.Core (run) where
+module Workhs.Core (run) where
 
 import           Data.Map.Strict                (Map)
 import qualified Data.Map.Strict                as M
 import           Data.Text                      (Text)
-import qualified Data.Text                      as T
-import           Engager.Exercise               (Exercise(..))
-import           Engager.Interface              (mainScreen)
+import           Engager.Exercise               (Exercise (..))
 import           Graphics.Vty.Widgets.Core      (defaultContext)
 import           Graphics.Vty.Widgets.EventLoop (runUi)
 import           Options.Applicative
+import           Workhs.Exercise                (Exercise (..))
+import           Workhs.Interface               (mainScreen)
 
 data Options = Options (Maybe String)
 

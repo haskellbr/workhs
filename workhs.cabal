@@ -1,14 +1,14 @@
 name:                engager
 version:             0.1.0.0
-license:             GPL-3
+license:             MIT
 license-file:        LICENSE
 build-type:          Simple
 cabal-version:       >=1.18
 
 library
-  exposed-modules:     Engager.Core
-                     , Engager.Exercise
-  other-modules:       Engager.Interface
+  exposed-modules:     Workhs.Core
+                     , Workhs.Exercise
+  other-modules:       Workhs.Interface
   build-depends:       base                 >=4.7 && <4.8
                      , text                 >=1.2 && <1.3
                      , vty-ui               >=1.8 && <1.9

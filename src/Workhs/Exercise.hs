@@ -1,7 +1,7 @@
-module Engager.Exercise (Exercise(..)) where
+module Workhs.Exercise (Exercise(..)) where
 
-import Data.Text (Text)
-import Prelude   (Either, IO)
+import           Data.Text (Text)
+import           Prelude   (Either, IO)
 
 data Exercise = Exercise { exerciseTitle     :: Text
                          , exerciseStatement :: Text
