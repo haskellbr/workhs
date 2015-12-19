@@ -20,6 +20,7 @@ import           Data.Conduit
 import qualified Data.Conduit.Binary           as Conduit.Binary
 import qualified Data.Conduit.List             as Conduit.List
 import           Data.Conduit.Process
+import qualified Data.Conduit.Text             as Conduit.Text
 import           Data.Default
 import           Data.List
 import           Data.Monoid
@@ -78,26 +79,30 @@ verifyOutput :: Text -> FilePath -> IO Bool
 verifyOutput out fp = withSystemTempDirectory "workhs" $ \tmp -> do
     (ClosedStream, fromProcess, ClosedStream, cph) <- streamingProcess
         (shell ("stack ghc -- -o " <> (tmp </> "workhs-verify") <> " " <> fp))
-    fromProcess $$ Conduit.List.mapM_ $ \l -> do
-        setSGR [SetColor Foreground Vivid Blue]
-        putStr "[ghc] "
-        setSGR [Reset]
-        ByteString.putStr l
+    fromProcess
+        =$= Conduit.Binary.lines
+        $$ Conduit.List.mapM_ $ \l -> do
+            setSGR [SetColor Foreground Vivid Blue]
+            putStr ("[stack ghc " <> takeFileName fp <> "] ")
+            setSGR [Reset]
+            ByteString.putStrLn l
     e <- waitForStreamingProcess cph
     case e of
         ExitFailure _ -> error "Failed to compile"
         ExitSuccess -> runResourceT $ do
             (ClosedStream, fromProcess', ClosedStream, cph') <- streamingProcess
                 (shell (tmp </> "workhs-verify"))
-            fromProcess'
+            out' <- fromProcess'
+                =$= Conduit.Binary.lines
                 =$= (Conduit.List.iterM $ \l -> liftIO $ do
                     setSGR [SetColor Foreground Vivid Yellow]
-                    putStr ("[" <> dropExtension (takeFileName fp) <> "] ")
+                    putStr ("[" <> takeFileName fp <> "] ")
                     setSGR [Reset]
-                    ByteString.putStr l)
-                $$ Conduit.Binary.sinkFile (tmp </> "output")
+                    ByteString.putStrLn l)
+                =$= Conduit.Text.decodeUtf8
+                $$ Conduit.List.fold (<>) mempty
             e' <- waitForStreamingProcess cph'
-            return (e' == ExitSuccess)
+            return (e' == ExitSuccess && out == out')
 
 data Options = Options { title       :: Text
                        , description :: Text
@@ -128,8 +133,16 @@ defaultMain Options{..} = do
             let currentTask = head tasks
             valid <- runVerifier (taskVerify currentTask) fp
             if valid
-                then putStrLn "Bazinga!"
-                else putStrLn "Ops..."
+                then do
+                    setSGR [SetColor Foreground Vivid Green]
+                    putStrLn "Congratilations! Your program compiled and passed the tests!"
+                    setSGR [Reset]
+                    prog <- getProgName
+                    putStrLn $ "Type " <> prog <> " to see the next step"
+                else do
+                    setSGR [SetColor Foreground Vivid Red]
+                    putStrLn "Ops... Something went wrong..."
+                    setSGR [Reset]
         [] -> do
             prog <- getProgName
             -- TODO list-prompt should use Text
