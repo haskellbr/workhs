@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Workhs
     (
       defaultMain
@@ -9,17 +10,18 @@ module Workhs
     )
   where
 
-import           Cheapskate                (markdown)
+import           Cheapskate                    (markdown)
 import           Cheapskate.Terminal
 import           Data.Default
 import           Data.List
 import           Data.Monoid
 import           Data.String.Here
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-import qualified Data.Text.IO              as Text
+import           Data.String.Here.Interpolated
+import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
+import qualified Data.Text.IO                  as Text
 import           System.Console.ListPrompt
-import           System.Environment        (getProgName)
+import           System.Environment            (getProgName)
 
 data Task = Task { taskTitle       :: Text
                  , taskDescription :: Text
@@ -61,13 +63,13 @@ instance Default Options where
                   , tasks = defaultTasks
                   }
 
-footer = [here|
-When you're finished with your code, type:
-
-    $ learnyouhaskell verify MyProgram.hs
-
-to continue.
-|]
+footer :: String -> Text
+footer prog = Text.unlines [ "When you're finished with your code, type:"
+                           , ""
+                           , "    $ " <> Text.pack prog <> " verify MyProgram.hs"
+                           , ""
+                           , "to continue."
+                           ]
 
 defaultMain :: Options -> IO ()
 defaultMain Options{..} = do
@@ -78,6 +80,6 @@ defaultMain Options{..} = do
         md = Text.unlines [ "# " <> title
                           , "## " <> taskTitle task
                           , taskDescription task
-                          , footer
+                          , footer prog
                           ]
     prettyPrint (markdown def md)
