@@ -6,7 +6,7 @@
 module Workhs
     (
       defaultMain
-    , Options
+    , Tutorial
     , def
     )
   where
@@ -15,7 +15,7 @@ import           Cheapskate                    (markdown)
 import           Cheapskate.Terminal
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
-import qualified Data.ByteString               as ByteString
+import qualified Data.ByteString.Char8         as ByteString
 import           Data.Conduit
 import qualified Data.Conduit.Binary           as Conduit.Binary
 import qualified Data.Conduit.List             as Conduit.List
@@ -94,7 +94,7 @@ verifyOutput out fp = withSystemTempDirectory "workhs" $ \tmp -> do
                 (shell (tmp </> "workhs-verify"))
             out' <- fromProcess'
                 =$= Conduit.Binary.lines
-                =$= (Conduit.List.iterM $ \l -> liftIO $ do
+                =$= Conduit.List.iterM (\l -> liftIO $ do
                     setSGR [SetColor Foreground Vivid Yellow]
                     putStr ("[" <> takeFileName fp <> "] ")
                     setSGR [Reset]
@@ -104,17 +104,22 @@ verifyOutput out fp = withSystemTempDirectory "workhs" $ \tmp -> do
             e' <- waitForStreamingProcess cph'
             return (e' == ExitSuccess && out == out')
 
-data Options = Options { title       :: Text
+data Tutorial = Tutorial { title     :: Text
+                       -- ^ The title for your tutorial
                        , description :: Text
+                       -- ^ The description for your tutorial in markdown
                        , tasks       :: [Task]
+                       -- ^ The task list for you tutorial
+                       , tutorialId  :: String
+                       -- ^ An ID for your tutorial
                        }
   deriving(Show)
-
-instance Default Options where
-    def = Options { title = "My Tutorial"
-                  , description = "# You'll be challenged to complete this!"
-                  , tasks = defaultTasks
-                  }
+instance Default Tutorial where
+    def = Tutorial { title = "My Tutorial"
+                   , description = "# You'll be challenged to complete this!"
+                   , tasks = defaultTasks
+                   , tutorialId = "workhs-default"
+                   }
 
 footer :: String -> Text
 footer prog = Text.unlines [ "When you're finished with your code, type:"
@@ -124,8 +129,8 @@ footer prog = Text.unlines [ "When you're finished with your code, type:"
                            , "to continue."
                            ]
 
-defaultMain :: Options -> IO ()
-defaultMain Options{..} = do
+defaultMain :: Tutorial -> IO ()
+defaultMain Tutorial{..} = do
     as <- getArgs
     case as of
         "verify":fp:_ -> do
