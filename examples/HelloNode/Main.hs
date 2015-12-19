@@ -2,10 +2,10 @@
 
 module Main where
 
-import           Data.Map.Strict  (fromList)
-import           Data.Text        (Text)
-import           Engager.Exercise
+import           Data.Map.Strict (fromList)
+import           Data.Text       (Text)
 import           Workhs.Core
+import           Workhs.Exercise
 import           Workhs.Exercise
 
 helloWorld :: (Text, Exercise)
