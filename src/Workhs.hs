@@ -104,15 +104,15 @@ verifyOutput out fp = withSystemTempDirectory "workhs" $ \tmp -> do
             e' <- waitForStreamingProcess cph'
             return (e' == ExitSuccess && out == out')
 
-data Tutorial = Tutorial { title     :: Text
-                       -- ^ The title for your tutorial
-                       , description :: Text
-                       -- ^ The description for your tutorial in markdown
-                       , tasks       :: [Task]
-                       -- ^ The task list for you tutorial
-                       , tutorialId  :: String
-                       -- ^ An ID for your tutorial
-                       }
+data Tutorial = Tutorial { title       :: Text
+                           -- ^ The title for your tutorial
+                         , description :: Text
+                           -- ^ The description for your tutorial in markdown
+                         , tasks       :: [Task]
+                           -- ^ The task list for you tutorial
+                         , tutorialId  :: String
+                           -- ^ An ID for your tutorial
+                         }
   deriving(Show)
 instance Default Tutorial where
     def = Tutorial { title = "My Tutorial"
