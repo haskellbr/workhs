@@ -1,7 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 module Workhs
     (
       defaultMain
@@ -12,6 +13,13 @@ module Workhs
 
 import           Cheapskate                    (markdown)
 import           Cheapskate.Terminal
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Resource
+import qualified Data.ByteString               as ByteString
+import           Data.Conduit
+import qualified Data.Conduit.Binary           as Conduit.Binary
+import qualified Data.Conduit.List             as Conduit.List
+import           Data.Conduit.Process
 import           Data.Default
 import           Data.List
 import           Data.Monoid
@@ -20,12 +28,13 @@ import           Data.String.Here.Interpolated
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.Text.IO                  as Text
+import           System.Console.ANSI
 import           System.Console.ListPrompt
 import           System.Directory
 import           System.Environment            (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
-import           System.Process
+import           System.IO.Temp
 
 data Task = Task { taskTitle       :: Text
                  , taskDescription :: Text
@@ -66,19 +75,29 @@ defaultTasks = [ Task "Hello World!" taskHelloWorldDescription
                ]
 
 verifyOutput :: Text -> FilePath -> IO Bool
-verifyOutput out fp = do
-    tmp <- getTemporaryDirectory
-    print tmp
-    e <- spawnCommand
-             ("stack ghc -- -o " <> (tmp </> "workhs-verify") <> " " <> fp) >>=
-         waitForProcess
+verifyOutput out fp = withSystemTempDirectory "workhs" $ \tmp -> do
+    (ClosedStream, fromProcess, ClosedStream, cph) <- streamingProcess
+        (shell ("stack ghc -- -o " <> (tmp </> "workhs-verify") <> " " <> fp))
+    fromProcess $$ Conduit.List.mapM_ $ \l -> do
+        setSGR [SetColor Foreground Vivid Blue]
+        putStr "[ghc] "
+        setSGR [Reset]
+        ByteString.putStr l
+    e <- waitForStreamingProcess cph
     case e of
         ExitFailure _ -> error "Failed to compile"
-        ExitSuccess -> do
-            putStrLn (tmp </> "workhs-verify")
-            (_, o, _) <- readProcessWithExitCode (tmp </> "workhs-verify") [] ""
-            print o
-            return True
+        ExitSuccess -> runResourceT $ do
+            (ClosedStream, fromProcess', ClosedStream, cph') <- streamingProcess
+                (shell (tmp </> "workhs-verify"))
+            fromProcess'
+                =$= (Conduit.List.iterM $ \l -> liftIO $ do
+                    setSGR [SetColor Foreground Vivid Yellow]
+                    putStr ("[" <> dropExtension (takeFileName fp) <> "] ")
+                    setSGR [Reset]
+                    ByteString.putStr l)
+                $$ Conduit.Binary.sinkFile (tmp </> "output")
+            e' <- waitForStreamingProcess cph'
+            return (e' == ExitSuccess)
 
 data Options = Options { title       :: Text
                        , description :: Text
