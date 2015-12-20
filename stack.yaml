@@ -14,6 +14,7 @@ extra-deps:
 - list-prompt-0.1.0.0
 - cheapskate-0.1.0.4
 - frontmatter-0.1.0.2
+- th-lift-instances-0.1.6
 
 # Override default flag values for local packages and extra-deps
 flags: {}

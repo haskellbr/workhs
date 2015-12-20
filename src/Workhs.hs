@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 module Workhs
     (
       -- * Tutorial construction basics
@@ -18,11 +19,13 @@ module Workhs
     )
   where
 
-import qualified Data.Text.IO as Text
 import           Cheapskate                   (markdown)
 import           Cheapskate.Terminal
+import           Control.Lens
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
+import           Data.Aeson                   (Value)
+import           Data.Aeson.Lens
 import qualified Data.ByteString.Char8        as ByteString
 import           Data.Conduit
 import qualified Data.Conduit.Binary          as Conduit.Binary
@@ -30,19 +33,23 @@ import qualified Data.Conduit.List            as Conduit.List
 import           Data.Conduit.Process
 import qualified Data.Conduit.Text            as Conduit.Text
 import           Data.Default
+import           Data.Frontmatter
 import           Data.List
+import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid
 import           Data.String.Here
 import           Data.Text                    (Text)
 import qualified Data.Text                    as Text
+import           Data.Text.Encoding           as Text
+import           Instances.TH.Lift            ()
+import           Language.Haskell.TH.Quote
+import           Language.Haskell.TH.Syntax
 import           System.Console.ANSI
 import           System.Console.ListPrompt
 import           System.Environment           (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
 import           System.IO.Temp
-import Language.Haskell.TH.Quote
-import Language.Haskell.TH.Syntax
 
 data Task = Task { taskTitle       :: Text
                  , taskDescription :: Text
@@ -50,10 +57,40 @@ data Task = Task { taskTitle       :: Text
                  }
   deriving(Show)
 
+-- frontmatterMarkdown :: ByteString -> (Maybe Value, Text)
+-- frontmatterMarkdown i = case parseYamlFrontmatter i of
+--     Done ri ya -> (ya, Text)
+--     Fail i' _ _ -> (Nothing, markdown def (Text.decodeUtf8 i'))
+
+readTaskQ :: FilePath -> Q Exp
+readTaskQ f = do
+    addDependentFile f
+
+    -- Parse the frontmatter out of the markdown file
+    taskIn <- runIO (ByteString.readFile f)
+    let (myaml, bmd) = case parseYamlFrontmatter taskIn of
+            Done i' ya -> (Just (ya :: Value), i')
+            Fail i' _ _ -> (Nothing, i')
+            _ -> (Nothing, taskIn)
+
+    -- Try to take the title from the filename by default
+    let ftit = Text.pack (dropExtension (takeFileName f))
+    -- Use the YAML frontmatter "title" field if it's there
+        tit = fromMaybe ftit $ do
+            yaml <- myaml
+            yaml ^? key "title" . nonNull . _String
+    -- Won't do anything with the description now
+        des = Text.decodeUtf8 bmd
+    [| Task { taskTitle = tit
+            , taskDescription = des
+            , taskVerify = TaskVerifierIO (const $ return True)
+            } |]
+
 readTask :: QuasiQuoter
-readtask = QuasiQuoter { quoteExp = \f -> do
-                             addDependentFile f
-                             md <- markdownFrontMatter <$> runIO (Text.readFile f)
+readTask = QuasiQuoter { quotePat = error "No pattern quoter"
+                       , quoteType = error "No type quoter"
+                       , quoteDec = error "No declaration quoter"
+                       , quoteExp = readTaskQ
                        }
 
 data TaskVerifier = TaskVerifierIO (FilePath -> IO Bool)
