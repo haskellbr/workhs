@@ -4,3 +4,6 @@
 [submodule "hpygments"]
 	path = hpygments
 	url = git://github.com/yamadapc/hpygments.git
+[submodule "frontmatter"]
+	path = frontmatter
+	url = git@github.com:yamadapc/haskell-frontmatter
