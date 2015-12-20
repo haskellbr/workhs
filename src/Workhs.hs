@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE RecordWildCards     #-}
@@ -199,7 +200,9 @@ defaultMain Tutorial{..} = do
         [] -> do
             prog <- getProgName
             -- TODO list-prompt should use Text
-            taskt <- Text.pack <$> simpleListPrompt def (map (Text.unpack . taskTitle) tasks)
+            taskt <- Text.pack <$> (simpleListPrompt def (map (Text.unpack . taskTitle) tasks) >>= \case
+                                         Nothing -> error "No selection!"
+                                         Just x -> return x)
             let Just task = find ((== taskt) . taskTitle) tasks
                 md = Text.unlines [ "# " <> title
                                   , "## " <> taskTitle task
