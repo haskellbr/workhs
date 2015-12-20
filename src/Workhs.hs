@@ -8,6 +8,7 @@ module Workhs
       -- * Tutorial construction basics
       defaultMain
     , readTask
+    , verifyOutput
       -- * Types
     , Tutorial(..)
     , Task(..)
@@ -45,7 +46,6 @@ import           Instances.TH.Lift            ()
 import           Language.Haskell.TH.Quote
 import           Language.Haskell.TH.Syntax
 import           System.Console.ANSI
-import           System.Console.ListPrompt
 import           System.Environment           (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
@@ -56,11 +56,6 @@ data Task = Task { taskTitle       :: Text
                  , taskVerify      :: TaskVerifier
                  }
   deriving(Show)
-
--- frontmatterMarkdown :: ByteString -> (Maybe Value, Text)
--- frontmatterMarkdown i = case parseYamlFrontmatter i of
---     Done ri ya -> (ya, Text)
---     Fail i' _ _ -> (Nothing, markdown def (Text.decodeUtf8 i'))
 
 readTaskQ :: FilePath -> Q Exp
 readTaskQ f = do
