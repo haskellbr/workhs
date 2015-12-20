@@ -46,6 +46,7 @@ import           Instances.TH.Lift            ()
 import           Language.Haskell.TH.Quote
 import           Language.Haskell.TH.Syntax
 import           System.Console.ANSI
+import           System.Console.ListPrompt
 import           System.Environment           (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
