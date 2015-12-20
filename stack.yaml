@@ -13,6 +13,7 @@ packages:
 extra-deps:
 - list-prompt-0.1.0.0
 - cheapskate-0.1.0.4
+- frontmatter-0.1.0.2
 
 # Override default flag values for local packages and extra-deps
 flags: {}

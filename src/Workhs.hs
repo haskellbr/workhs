@@ -4,12 +4,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Workhs
     (
+      -- * Tutorial construction basics
       defaultMain
-    , Tutorial
+    , readTask
+      -- * Types
+    , Tutorial(..)
+    , Task(..)
+    , TaskVerifier(..)
+      -- * Re-exports
     , def
+    , here
+    , hereFile
     )
   where
 
+import qualified Data.Text.IO as Text
 import           Cheapskate                   (markdown)
 import           Cheapskate.Terminal
 import           Control.Monad.IO.Class
@@ -32,6 +41,8 @@ import           System.Environment           (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
 import           System.IO.Temp
+import Language.Haskell.TH.Quote
+import Language.Haskell.TH.Syntax
 
 data Task = Task { taskTitle       :: Text
                  , taskDescription :: Text
@@ -39,11 +50,16 @@ data Task = Task { taskTitle       :: Text
                  }
   deriving(Show)
 
+readTask :: QuasiQuoter
+readtask = QuasiQuoter { quoteExp = \f -> do
+                             addDependentFile f
+                             md <- markdownFrontMatter <$> runIO (Text.readFile f)
+                       }
+
 data TaskVerifier = TaskVerifierIO (FilePath -> IO Bool)
 
 instance Show TaskVerifier where
   show (TaskVerifierIO _) = "TaskVerifierIO"
-
 
 runVerifier :: TaskVerifier -> FilePath -> IO Bool
 runVerifier (TaskVerifierIO test) = test
@@ -66,15 +82,15 @@ You can print things to the terminal using `putStrLn`:
 
 defaultTasks :: [Task]
 defaultTasks = [ Task "Hello World!" taskHelloWorldDescription
-                     (TaskVerifierIO (verifyOutput "Hello World"))
+                     (verifyOutput "Hello World")
                , Task "First functions" "" undefined
                , Task "Introduction to lists" "" undefined
                , Task "List comprehensions" "" undefined
                , Task "Tuples" "" undefined
                ]
 
-verifyOutput :: Text -> FilePath -> IO Bool
-verifyOutput out fp = withSystemTempDirectory "workhs" $ \tmp -> do
+verifyOutput :: Text -> TaskVerifier
+verifyOutput out = TaskVerifierIO $ \fp -> withSystemTempDirectory "workhs" $ \tmp -> do
     (ClosedStream, fromProcess, ClosedStream, cph) <- streamingProcess
         (shell ("stack ghc -- -o " <> (tmp </> "workhs-verify") <> " " <> fp))
     fromProcess
@@ -112,6 +128,7 @@ data Tutorial = Tutorial { title       :: Text
                            -- ^ An ID for your tutorial
                          }
   deriving(Show)
+
 instance Default Tutorial where
     def = Tutorial { title = "My Tutorial"
                    , description = "# You'll be challenged to complete this!"
@@ -138,7 +155,7 @@ defaultMain Tutorial{..} = do
             if valid
                 then do
                     setSGR [SetColor Foreground Vivid Green]
-                    putStrLn "Congratilations! Your program compiled and passed the tests!"
+                    putStrLn "Congratulations! Your program compiled and passed the tests!"
                     setSGR [Reset]
                     prog <- getProgName
                     putStrLn $ "Type " <> prog <> " to see the next step"
