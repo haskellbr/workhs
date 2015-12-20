@@ -15,6 +15,7 @@ extra-deps:
 - cheapskate-0.1.0.4
 - frontmatter-0.1.0.2
 - th-lift-instances-0.1.6
+- vty-5.4.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
