@@ -7,3 +7,6 @@
 [submodule "frontmatter"]
 	path = frontmatter
 	url = git://github.com/yamadapc/haskell-frontmatter.git
+[submodule "list-prompt"]
+	path = list-prompt
+	url = git://github.com/yamadapc/list-prompt.git
