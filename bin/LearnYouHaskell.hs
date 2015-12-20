@@ -11,6 +11,9 @@ tutorial = Tutorial { title = "Learn you Haskell!"
                     , tasks = [ [readTask|./bin/LearnYouHaskell/Hello World.md|]
                                 { taskVerify = verifyOutput "Hello World"
                                 }
+                              , [readTask|./bin/LearnYouHaskell/Baby Steps.md|]
+                                { taskVerify = verifyOutput "20"
+                                }
                               ]
                     }
 

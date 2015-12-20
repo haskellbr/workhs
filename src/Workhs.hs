@@ -200,7 +200,8 @@ defaultMain Tutorial{..} = do
         [] -> do
             prog <- getProgName
             -- TODO list-prompt should use Text
-            taskt <- Text.pack <$> (simpleListPrompt def (map (Text.unpack . taskTitle) tasks) >>= \case
+            taskt <- Text.pack <$> (simpleListPrompt (listPromptOpts tasks)
+                                    (map (Text.unpack . taskTitle) tasks) >>= \case
                                          Nothing -> error "No selection!"
                                          Just x -> return x)
             let Just task = find ((== taskt) . taskTitle) tasks
@@ -211,3 +212,32 @@ defaultMain Tutorial{..} = do
                                   ]
             prettyPrint (markdown def md)
         _ -> error "Failed to parse arguments"
+
+listPromptOpts :: [Task] -> ListPromptOptions
+listPromptOpts tasks = def { mputChoice = Just put
+                           , selectedItemSGR = [ SetColor Foreground Vivid Cyan
+                                               , SetConsoleIntensity BoldIntensity
+                                               ]
+                           , normalItemSGR = [ SetColor Foreground Dull White
+                                             ]
+                           }
+  where
+    put PutChoiceOptions{..} = do
+        let task = find ((== putChoiceStr) . Text.unpack . taskTitle) tasks
+        case task of
+            Nothing -> putStr (putChoiceStr ++ putChoiceSuffix)
+            Just t -> do
+                let pending = True
+                if pending
+                    -- Task isn't completed
+                    then do
+                        setSGR [SetColor Foreground Vivid Yellow ]
+                        putStr "◯  "
+                        setSGR putChoiceItemSgr
+                        putStr putChoiceStr
+                    -- Task is completed
+                    else do
+                        setSGR [SetColor Foreground Vivid Green]
+                        putStr "◉  "
+                        setSGR putChoiceItemSgr
+                        putStr putChoiceStr
