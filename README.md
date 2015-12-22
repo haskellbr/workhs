@@ -3,6 +3,10 @@
 - - -
 Make yourself a workshop for great good!
 
+**This isn't quite there yet; bugged non-working software**
+
+![](https://www.dropbox.com/s/mavdux4ptpuc69e/Screenshot%202015-12-22%2015.22.54.png?dl=1)
+
 ## Building
 We're using unpublished packages, so to build you need to:
 - Have `stack` installed
