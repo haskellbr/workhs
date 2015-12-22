@@ -24,6 +24,7 @@ module Workhs
 import           Cheapskate                   (markdown)
 import           Cheapskate.Terminal
 import           Control.Lens
+import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
 import           Data.Aeson                   (Value)
@@ -43,6 +44,8 @@ import           Data.String.Here
 import           Data.Text                    (Text)
 import qualified Data.Text                    as Text
 import           Data.Text.Encoding           as Text
+import qualified Data.Text.Lazy               as Text.Lazy
+import qualified Data.Text.Lazy.IO            as Text.Lazy
 import           Instances.TH.Lift            ()
 import           Language.Haskell.TH.Quote
 import           Language.Haskell.TH.Syntax
@@ -210,16 +213,32 @@ defaultMain Tutorial{..} = do
                                   , taskDescription task
                                   , footer prog
                                   ]
-            prettyPrint (markdown def md)
+            desc <- renderIOWith def { prettyPrintWidth = 78 } (markdown def md)
+            forM_ (Text.Lazy.lines desc) $ \l -> do
+                putStr "  "
+                Text.Lazy.putStrLn l
         _ -> error "Failed to parse arguments"
 
 listPromptOpts :: [Task] -> ListPromptOptions
 listPromptOpts tasks = def { mputChoice = Just put
-                           , selectedItemSGR = [ SetColor Foreground Vivid Cyan
+                           , selectedItemSGR = [ SetColor Foreground Dull Cyan
                                                , SetConsoleIntensity BoldIntensity
                                                ]
-                           , normalItemSGR = [ SetColor Foreground Dull White
+                           , normalItemSGR = [ SetColor Foreground Vivid Black
+                                             , SetColor Background Vivid White
                                              ]
+                           , mlistFooter = Just $
+                                 replicate 51 ' ' <>
+                                 setSGRCode [ SetColor Foreground Dull White ] <>
+                                 "Made with " <>
+                                 setSGRCode [ SetColor Foreground Vivid Red ] <>
+                                 "❤" <>
+                                 setSGRCode [ SetColor Foreground Dull White ] <>
+                                 " by " <>
+                                 setSGRCode [ SetColor Foreground Vivid Black ] <>
+                                 "Haskell" <>
+                                 setSGRCode [ SetColor Foreground Vivid Green ] <>
+                                 "BR   "
                            }
   where
     put PutChoiceOptions{..} = do
@@ -235,9 +254,11 @@ listPromptOpts tasks = def { mputChoice = Just put
                         putStr "◯  "
                         setSGR putChoiceItemSgr
                         putStr putChoiceStr
+                        putStr (drop 3 putChoiceSuffix)
                     -- Task is completed
                     else do
                         setSGR [SetColor Foreground Vivid Green]
                         putStr "◉  "
                         setSGR putChoiceItemSgr
                         putStr putChoiceStr
+                        putStr (drop 3 putChoiceSuffix)
