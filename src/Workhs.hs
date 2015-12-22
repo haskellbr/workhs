@@ -29,7 +29,6 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
 import           Data.Aeson
-import           Data.Aeson                   (Value)
 import           Data.Aeson.Lens
 import qualified Data.ByteString.Char8        as ByteString.Char8
 import qualified Data.ByteString.Lazy         as ByteString.Lazy
@@ -40,6 +39,7 @@ import           Data.Conduit.Process
 import qualified Data.Conduit.Text            as Conduit.Text
 import           Data.Default
 import           Data.Frontmatter
+import qualified Data.HashMap.Strict          as HashMap
 import           Data.List
 import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid
@@ -226,8 +226,9 @@ setCurrent Task{..} t = t { tutorialCurrentTask = Just taskTitle
                           }
 
 setCompleted :: Task -> TutorialState -> TutorialState
-setCompleted Task{..} t = t { tutorialCompletedTasks = tutorialCompletedTasks t &
-                                  key taskTitle .~ Bool True
+setCompleted Task{..} t = t { tutorialCompletedTasks =
+                                  let Object h = tutorialCompletedTasks t
+                                  in Object (HashMap.insert taskTitle (Bool True) h)
                             }
 
 defaultMain :: Tutorial -> IO ()
@@ -245,7 +246,12 @@ defaultMain Tutorial{..} = do
                     putStrLn "Congratulations! Your program compiled and passed the tests!"
                     setSGR [Reset]
                     let st' = setCompleted currentTask st
-                    writeState st'
+                        st'' = case findIndex ((== taskTitle currentTask) . taskTitle) tasks of
+                            Just idx -> case tasks ^? element idx of
+                                Just t -> setCurrent t st'
+                                Nothing -> st'
+                            Nothing -> st'
+                    writeState st''
                     prog <- getProgName
                     putStrLn $ "Type " <> prog <> " to see the next step"
                 else do

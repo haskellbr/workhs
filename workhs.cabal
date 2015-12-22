@@ -7,9 +7,8 @@ cabal-version:       >=1.18
 
 library
   exposed-modules:     Workhs
-  build-depends:       ansi-terminal
-                     , directory
-                     , aeson
+  build-depends:       aeson
+                     , ansi-terminal
                      , base >=4 && <5
                      , bytestring
                      , cheapskate
@@ -17,6 +16,7 @@ library
                      , conduit
                      , conduit-extra
                      , data-default
+                     , directory
                      , filepath >= 1.4.0.0
                      , frontmatter
                      , here
@@ -30,21 +30,22 @@ library
                      , text
                      , th-lift-instances
                      , transformers >= 0.4.2.0
+                     , unordered-containers
   hs-source-dirs:      src
   ghc-options:         -O2 -threaded
   default-language:    Haskell2010
 
 executable learnyouhaskell
   main-is:             LearnYouHaskell.hs
-  build-depends:       ansi-terminal
-                     , directory
-                     , aeson
+  build-depends:       aeson
+                     , ansi-terminal
                      , base >=4 && <5
                      , bytestring
                      , cheapskate
                      , cheapskate-terminal
                      , conduit
                      , conduit-extra
+                     , directory
                      , filepath >= 1.4.0.0
                      , frontmatter
                      , here
@@ -56,6 +57,7 @@ executable learnyouhaskell
                      , temporary
                      , th-lift-instances
                      , transformers >= 0.4.2.0
+                     , unordered-containers
                      , workhs
   hs-source-dirs:      bin
   ghc-options:         -O2 -threaded
