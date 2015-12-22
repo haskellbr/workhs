@@ -250,11 +250,13 @@ listPromptOpts tasks = def { mputChoice = Just put
                 if pending
                     -- Task isn't completed
                     then do
-                        setSGR [SetColor Foreground Vivid Yellow ]
-                        putStr "◯  "
+                        setSGR [SetColor Foreground Dull Red ]
+                        putStr "◉  "
                         setSGR putChoiceItemSgr
                         putStr putChoiceStr
-                        putStr (drop 3 putChoiceSuffix)
+                        setSGR [SetColor Foreground Dull Yellow ]
+                        putStr "  (pending)"
+                        putStr (drop (length ("  (pending)" :: String) + 3) putChoiceSuffix)
                     -- Task is completed
                     else do
                         setSGR [SetColor Foreground Vivid Green]
