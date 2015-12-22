@@ -8,6 +8,7 @@ cabal-version:       >=1.18
 library
   exposed-modules:     Workhs
   build-depends:       ansi-terminal
+                     , directory
                      , aeson
                      , base >=4 && <5
                      , bytestring
@@ -36,6 +37,7 @@ library
 executable learnyouhaskell
   main-is:             LearnYouHaskell.hs
   build-depends:       ansi-terminal
+                     , directory
                      , aeson
                      , base >=4 && <5
                      , bytestring
