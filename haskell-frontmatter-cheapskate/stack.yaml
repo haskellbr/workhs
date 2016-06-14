@@ -6,17 +6,9 @@ resolver: lts-3.18
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- './cheapskate-terminal'
-- './hpygments'
-- './list-prompt'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps:
-- cheapskate-0.1.0.4
-- frontmatter-0.1.0.2
-- th-lift-instances-0.1.6
-- vty-5.4.0
-- wxcore-0.92.2.0
+extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 flags: {}

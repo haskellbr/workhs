@@ -11,6 +11,7 @@ module Workhs
       defaultMain
     , readTask
     , verifyOutput
+    , verifySpec
       -- * Types
     , Tutorial(..)
     , Task(..)
@@ -47,6 +48,7 @@ import           Data.String.Here
 import           Data.Text                    (Text)
 import qualified Data.Text                    as Text
 import           Data.Text.Encoding           as Text
+import qualified Data.Text.IO                 as Text
 import qualified Data.Text.Lazy               as Text.Lazy
 import qualified Data.Text.Lazy.IO            as Text.Lazy
 import           GHC.Generics
@@ -99,12 +101,15 @@ readTask = QuasiQuoter { quotePat = error "No pattern quoter"
                        }
 
 data TaskVerifier = TaskVerifierIO (FilePath -> IO Bool)
+                  | TaskVerifierSpec (FilePath -> IO Bool)
 
 instance Show TaskVerifier where
   show (TaskVerifierIO _) = "TaskVerifierIO"
+  show (TaskVerifierSpec _) = "TaskVerifierSpec"
 
 runVerifier :: TaskVerifier -> FilePath -> IO Bool
 runVerifier (TaskVerifierIO test) = test
+runVerifier (TaskVerifierSpec test) = test
 
 taskHelloWorldDescription :: Text
 taskHelloWorldDescription = [here|
@@ -130,6 +135,71 @@ defaultTasks = [ Task "Hello World!" taskHelloWorldDescription
                , Task "List comprehensions" "" undefined
                , Task "Tuples" "" undefined
                ]
+
+cabalFileTemplate :: String
+cabalFileTemplate = [here|
+name:                workhs-example
+version:             0.1.0.0
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable workhs-example
+  main-is:             Main.hs
+  build-depends:       base >=4.8 && <4.9
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+test-suite hspec
+  main-is: Spec.hs
+  type: exitcode-stdio-1.0
+  build-depends: base
+               , hspec
+               , QuickCheck
+  hs-source-dirs: test
+                , src
+  default-language: Haskell2010
+|]
+
+stackFileTemplate :: String
+stackFileTemplate = [here|
+resolver: lts-3.19
+packages:
+- '.'
+extra-deps: []
+flags: {}
+extra-package-dbs: []
+|]
+
+hspecSpecTemplate :: String
+hspecSpecTemplate = [here|
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
+|]
+
+verifySpec :: Either FilePath Text -> TaskVerifier
+verifySpec es = case es of
+    (Left specFp) -> TaskVerifierSpec $ \fp -> verifySpec' fp =<< Text.readFile specFp
+    (Right spec) -> TaskVerifierSpec $ \fp -> verifySpec' fp spec
+  where
+    verifySpec' :: FilePath -> Text -> IO Bool
+    verifySpec' fp spec = withSystemTempDirectory "workhs" $ \tmp -> do
+        initSpec tmp spec
+        initModule tmp fp
+        runSpec tmp
+        return False
+    runSpec = do
+        -- (ClosedStream, fromProcess, ClosedStream, cph) <- streamingProcess
+            -- ((shell "stack test") { cwd = Just ""
+            --                       })
+        return undefined
+    initModule tmp fp = do
+        createDirectory (tmp </> "src")
+        copyFile fp (tmp </> "test" </> "Main.hs")
+    initSpec tmp spec = do
+        writeFile (tmp </> "workhs-example.cabal") cabalFileTemplate
+        writeFile (tmp </> "stack.yaml") stackFileTemplate
+        createDirectory (tmp </> "test")
+        Text.writeFile (tmp </> "test" </> "MainSpec.hs") spec
+        writeFile (tmp </> "test" </> "Spec.hs") hspecSpecTemplate
 
 verifyOutput :: Text -> TaskVerifier
 verifyOutput out = TaskVerifierIO $ \fp -> withSystemTempDirectory "workhs" $ \tmp -> do
@@ -305,7 +375,7 @@ listPromptOpts st tasks = def { mputChoice = Just put
         let task = find ((== putChoiceStr) . Text.unpack . taskTitle) tasks
         case task of
             Nothing -> putStr (putChoiceStr ++ putChoiceSuffix)
-            Just t -> case (tutorialCompletedTasks st) ^? key (taskTitle t) . _Bool of
+            Just t -> case tutorialCompletedTasks st ^? key (taskTitle t) . _Bool of
                 Just True -> do
                     setSGR [SetColor Foreground Vivid Green]
                     putStr "◉  "
