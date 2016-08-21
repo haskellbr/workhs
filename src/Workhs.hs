@@ -242,8 +242,6 @@ verifyOutputWith out args = TaskVerifierIO $ \fp -> withSystemTempDirectory "wor
                 $$ Conduit.List.fold (\t m -> m : t) []
             e' <- waitForStreamingProcess cph'
             let out'' = case out' of [] -> ""; _ -> Text.init (Text.unlines (reverse out')) :: Text
-            liftIO $ print out
-            liftIO $ print out''
             return (e' == ExitSuccess && out == out'')
 
 data Tutorial = Tutorial { title       :: Text
