@@ -12,7 +12,8 @@ tutorial = Tutorial { title = "Learn you Haskell!"
                                 { taskVerify = verifyOutput "Hello World"
                                 }
                               , [readTask|./bin/LearnYouHaskell/Baby Steps.md|]
-                                { taskVerify = verifyOutput "20"
+                                { taskVerify =
+                                      verifyOutputWith "10\n2.5" (map show [1, 2, 3, 4])
                                 }
                               ]
                     }

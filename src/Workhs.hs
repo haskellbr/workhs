@@ -11,6 +11,7 @@ module Workhs
       defaultMain
     , readTask
     , verifyOutput
+    , verifyOutputWith
     , verifySpec
       -- * Types
     , Tutorial(..)
@@ -25,6 +26,7 @@ module Workhs
 
 import           Cheapskate                   (markdown)
 import           Cheapskate.Terminal
+import           Control.Concurrent.Async
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -61,6 +63,7 @@ import           System.Directory
 import           System.Environment
 import           System.Exit
 import           System.FilePath
+import           System.IO
 import           System.IO.Temp
 
 data Task = Task { taskTitle       :: Text
@@ -202,13 +205,23 @@ verifySpec es = case es of
         writeFile (tmp </> "test" </> "Spec.hs") hspecSpecTemplate
 
 verifyOutput :: Text -> TaskVerifier
-verifyOutput out = TaskVerifierIO $ \fp -> withSystemTempDirectory "workhs" $ \tmp -> do
-    (ClosedStream, fromProcess, ClosedStream, cph) <- streamingProcess
+verifyOutput out = verifyOutputWith out []
+
+verifyOutputWith :: Text -> [String] -> TaskVerifier
+verifyOutputWith out args = TaskVerifierIO $ \fp -> withSystemTempDirectory "workhs" $ \tmp -> do
+    (ClosedStream, fromProcess, stderrFromProcess, cph) <- streamingProcess
         (shell ("stack ghc -- -o " <> (tmp </> "workhs-verify") <> " " <> fp))
-    fromProcess
+    _ <- async $ fromProcess
         =$= Conduit.Binary.lines
         $$ Conduit.List.mapM_ $ \l -> do
             setSGR [SetColor Foreground Vivid Blue]
+            putStr ("[stack ghc " <> takeFileName fp <> "] ")
+            setSGR [Reset]
+            ByteString.Char8.putStrLn l
+    _ <- async $ stderrFromProcess
+        =$= Conduit.Binary.lines
+        $$ Conduit.List.mapM_ $ \l -> do
+            setSGR [SetColor Foreground Vivid Red]
             putStr ("[stack ghc " <> takeFileName fp <> "] ")
             setSGR [Reset]
             ByteString.Char8.putStrLn l
@@ -217,7 +230,7 @@ verifyOutput out = TaskVerifierIO $ \fp -> withSystemTempDirectory "workhs" $ \t
         ExitFailure _ -> error "Failed to compile"
         ExitSuccess -> runResourceT $ do
             (ClosedStream, fromProcess', ClosedStream, cph') <- streamingProcess
-                (shell (tmp </> "workhs-verify"))
+                (shell (tmp </> "workhs-verify" <> " " <> unwords args))
             out' <- fromProcess'
                 =$= Conduit.Binary.lines
                 =$= Conduit.List.iterM (\l -> liftIO $ do
@@ -226,9 +239,12 @@ verifyOutput out = TaskVerifierIO $ \fp -> withSystemTempDirectory "workhs" $ \t
                     setSGR [Reset]
                     ByteString.Char8.putStrLn l)
                 =$= Conduit.Text.decodeUtf8
-                $$ Conduit.List.fold (<>) mempty
+                $$ Conduit.List.fold (\t m -> m : t) []
             e' <- waitForStreamingProcess cph'
-            return (e' == ExitSuccess && out == out')
+            let out'' = case out' of [] -> ""; _ -> Text.init (Text.unlines (reverse out')) :: Text
+            liftIO $ print out
+            liftIO $ print out''
+            return (e' == ExitSuccess && out == out'')
 
 data Tutorial = Tutorial { title       :: Text
                            -- ^ The title for your tutorial
@@ -305,10 +321,23 @@ defaultMain :: Tutorial -> IO ()
 defaultMain Tutorial{..} = do
     as <- getArgs
     st <- readState
+    prog <- getProgName
     case as of
         "verify":fp:_ -> do
             -- TODO read state from $HOME/.config
-            let currentTask = head tasks
+            let currentTaskTitle = tutorialCurrentTask st
+            currentTask <- case currentTaskTitle of
+                Nothing -> do
+                    hPutStrLn stderr "Not currently working on any task"
+                    hPutStrLn stderr $ "Run " <> prog <> " to start a task"
+                    exitFailure
+                Just taskt -> case find ((== taskt) . taskTitle) tasks of
+                    Nothing -> do
+                        hPutStrLn stderr "Invalid task in state file:"
+                        hPutStrLn stderr $ "  " <> show taskt
+                        exitFailure
+                    Just t -> return t
+
             valid <- runVerifier (taskVerify currentTask) fp
             if valid
                 then do
@@ -322,14 +351,12 @@ defaultMain Tutorial{..} = do
                                 Nothing -> st'
                             Nothing -> st'
                     writeState st''
-                    prog <- getProgName
                     putStrLn $ "Type " <> prog <> " to see the next step"
                 else do
                     setSGR [SetColor Foreground Vivid Red]
                     putStrLn "Ops... Something went wrong..."
                     setSGR [Reset]
         [] -> do
-            prog <- getProgName
             -- TODO list-prompt should use Text
             taskt <- Text.pack <$> (simpleListPrompt (listPromptOpts st tasks)
                                     (map (Text.unpack . taskTitle) tasks) >>= \case
